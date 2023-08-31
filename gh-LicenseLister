@@ -3,7 +3,26 @@ import os
 import pprint
 import subprocess
 import json
+from sys import argv
 
+#todo: input parameters: only unknown, only list, detail
+if len(argv) == 1:
+    print('Use with either parameter --all, --list, --unknown')
+    exit()
+elif len(argv) > 2:
+    print('Use with either parameter --all, --list, --unknown')
+    exit()
+else:
+    if(argv[1] not in ['--all', '--list', '--unknown']):
+        print('No valid input given')
+        print('Use with either parameter --all, --list, --unknown')
+        exit()
+    else:
+        parameter = 'all'
+        if argv[1] == '--list':
+            parameter = 'list'
+        elif argv[1] == '--unknown':
+            parameter = 'unknown'
 
 
 # Ausführen des GH CLI-Befehls zum Abrufen der Repositorys des Benutzers
@@ -35,9 +54,12 @@ def sbom_print(json):
             else:
                 versionInfo = 'UNKNOWN'
 
-
             line = package['name'] + ' - Version: ' + versionInfo + ' - License: '+licenseUsed
-            print(line)
+            if(parameter == 'all'):
+                print(line)
+            if(parameter == 'unknown' and licenseUsed == 'UNKNOWN'):
+                print(line)
+
         usedLicenses = list(set(usedLicenses))
         pprint.pprint(usedLicenses)
     pass
