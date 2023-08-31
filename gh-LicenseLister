@@ -1,0 +1,79 @@
+#!/usr/bin/python3
+import os
+import pprint
+import subprocess
+import json
+
+
+
+# Ausführen des GH CLI-Befehls zum Abrufen der Repositorys des Benutzers
+orgas = subprocess.run(['gh', 'api', 'user/orgs'], capture_output=True, text=True)
+orgaNames = [orga['login'] for orga in json.loads(orgas.stdout)]
+
+
+def sbom_print(json):
+    usedLicenses = []
+    json = json['sbom']
+    if 'packages' not in json:
+        print('No Packages used here')
+        return
+    else:
+        for package in json['packages']:
+            if 'licenseConcluded' in package:
+                licenseUsed = package['licenseConcluded']
+            else:
+                licenseUsed = 'UNKNOWN'
+            usedLicenses.append(licenseUsed)
+
+            if 'versionInfo' in package:
+                versionInfo = package['versionInfo']
+            else:
+                versionInfo = 'UNKNOWN'
+
+
+            line = package['name'] + ' - Version: ' + versionInfo + ' - License: '+licenseUsed
+            print(line)
+        usedLicenses = list(set(usedLicenses))
+        pprint.pprint(usedLicenses)
+    pass
+
+
+
+for orgaName in orgaNames:
+    orgaRepos = subprocess.run(['gh' ,'repo','list', orgaName, '--json', 'name'], capture_output=True, text=True)
+    orgaReposParsed = json.loads(orgaRepos.stdout)
+    repositories = [repo['name'] for repo in orgaReposParsed]
+    for repository in repositories:
+        commandString = f'gh api /repos/{orgaName}/{repository}/dependency-graph/sbom'
+        sbom = subprocess.run(commandString, capture_output=True, text=True, shell=True)
+        sbomJson = json.loads(sbom.stdout)
+        print(orgaName, repository)
+        if "message" in sbomJson:
+            pprint.pprint('NO SBOM available - enable dependabot for more info')
+
+
+        else:
+            sbom_print(sbomJson)
+
+        print('---------------------------------------------------------------')
+exit(1)
+result = subprocess.run(['gh', 'repo', 'list', '--visibility', 'public', '--json', 'name'], capture_output=True, text=True)
+
+# Extrahieren der Repositorynamen aus der JSON-Ausgabe
+repositories = [repo['name'] for repo in json.loads(result.stdout)]
+
+# Durchlaufen aller Repositorys und Ausführen des GH CLI-Befehls zum Abrufen der Lizenzen
+for repository in repositories:
+    result = subprocess.run(['gh', 'api', f'/repos/{repository}/license'], capture_output=True, text=True)
+
+    # Überprüfen, ob die Lizenz verfügbar ist
+    if result.returncode == 0:
+        license = json.loads(result.stdout)
+        print(f"Repository: {repository}, License: {license['license']['name']}")
+    else:
+        print(f"Repository: {repository}, License: N/A")
+
+
+
+
+
