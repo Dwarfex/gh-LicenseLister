@@ -28,7 +28,9 @@ else:
 # Ausführen des GH CLI-Befehls zum Abrufen der Repositorys des Benutzers
 orgas = subprocess.run(['gh', 'api', 'user/orgs'], capture_output=True, text=True)
 orgaNames = [orga['login'] for orga in json.loads(orgas.stdout)]
-
+#username = subprocess.run(['git', 'config', 'user.name'])
+#orgaNames.append(username.stdout)
+#orgaNames = orgaNames.reverse()
 
 def sbom_print(json):
     usedLicenses = []
@@ -74,7 +76,8 @@ for orgaName in orgaNames:
         commandString = f'gh api /repos/{orgaName}/{repository}/dependency-graph/sbom'
         sbom = subprocess.run(commandString, capture_output=True, text=True, shell=True)
         sbomJson = json.loads(sbom.stdout)
-        print(orgaName, repository)
+        title = orgaName + '/' + repository
+        print(title)
         if "message" in sbomJson:
             pprint.pprint('NO SBOM available - enable dependabot for more info')
 
