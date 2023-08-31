@@ -19,10 +19,15 @@ def sbom_print(json):
         return
     else:
         for package in json['packages']:
-            if 'licenseConcluded' in package:
+            if 'licenseDeclared' in package:
+                licenseUsed = package['licenseDeclared']
+            elif 'licenseConcluded' in package:
                 licenseUsed = package['licenseConcluded']
             else:
                 licenseUsed = 'UNKNOWN'
+                #pprint.pprint(package)
+
+
             usedLicenses.append(licenseUsed)
 
             if 'versionInfo' in package:
